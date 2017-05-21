@@ -2,7 +2,7 @@ function orientationRF()
 
 t1 = tic;
 
-global imageFile;
+global imageFile kernelG1 Row Col;
 
 setParameters();
 
@@ -18,7 +18,7 @@ end
 %}
 
 
-name = fileList{2}; % 9, 14, 17, 23, 24, 25, 26, 30, 35*, 43**, 48
+name = fileList{1}; % 9, 14, 17, 23, 24, 25, 26, 30, 35*, 43**, 48
 
 imageFile = name;
 
@@ -35,6 +35,9 @@ disp(toc(t1));
 
 disp(name);
 
+%I = mat2gray(full(vec2mat(kernelG1(floor(Row * Col / 2 - Col / 2), :)', Col)));
+%imshow(I);
+
 disp('Done');
 
 function setParameters()
@@ -46,7 +49,7 @@ kernelG2 = [];
 
 sigma1 = 1; % Equation (3), (4), (9)   default 1
 sigma2 = 1; % Equation (10), (11)  default 0.5
-dc = 0.025; % Equation  (6), (7), (20) default 0.25
+dc = 0.001; % Equation  (6), (7), (20) default 0.25   0.025
 alpha = 0.005; % Equation  (22)  % deafault 0.5
 C1 = 1.0; % Equation (8)   default 1.5
 C2 = 0.5; % Equation (9) default 0.075
@@ -54,7 +57,7 @@ gamma = 1.0; % Equation (14), (15), (17)  default 10.0
 w = 0.6; % Equation (17) default 6.0 
 
 
-
+%{
 function init()
 
 global image Row Col rightVertical leftVertical;
@@ -62,9 +65,9 @@ global image Row Col rightVertical leftVertical;
 [image, Row, Col] = readImage();
 rightVertical = [];
 leftVertical = [];
+%}
 
-
-
+%{
 function result = folderDetails()
 
 global inputFolder;
@@ -78,8 +81,9 @@ fileList = {index.name};
 fileList = fileList(:, 3 : end);
 
 result = fileList;
+%}
 
-
+%{
 function [result, r, c] = readImage()
 
 global inputFolder imageFile rawImage;
@@ -96,7 +100,7 @@ result = double(rawImage);
 
 result = result';
 result = result(:);
-
+%}
 
 function run()
 
@@ -124,7 +128,7 @@ leftVertical = incidenceVerticalLeft();
 %disp('Runtime for G2:');
 %disp(toc(t5));
 
-iterations = 10;
+iterations = 100;
 gridSize = floor(sqrt(iterations)) + 1;
 t = 1 : iterations;
 normC = [];
@@ -157,14 +161,14 @@ for r = 1 : iterations
     normVminus = [normVminus, norm(vminus_rectified, 'fro')];
     normX = [normX, norm(x, 'fro')];
     
-    showImages(C, r, strcat('Iteration: ', int2str(r)), gridSize);
+    %showImages(C, r, strcat('Iteration: ', int2str(r)), gridSize);
     
 end
 
 disp(strcat('Runtime for iterations = ', iterations));
 disp(toc(t6));
 
-showImages(rawImage, iterations + 1, 'Original Image', gridSize);
+%showImages(rawImage, iterations + 1, 'Original Image', gridSize);
 
 showFinalImage(C);
 
@@ -261,11 +265,18 @@ function result = incidenceVerticalRight()
 
 global Row Col sigma2 kernelG2;
 
+%{
 block = eye(Col - sigma2);
 
 block = [zeros(Col - sigma2, sigma2), block];
 block = [block; [zeros(sigma2, Col - 1), ones(sigma2, 1)]];
 block = sparse(block);
+%}
+
+
+block = spdiags(ones(Col, 1), sigma2, Col, Col);
+block(Col - sigma2 + 1 : end, end) = 1;
+
 
 %disp(nnz(block)/numel(block));
 
@@ -277,11 +288,15 @@ function result = incidenceVerticalLeft()
 
 global Row Col sigma2 kernelG2;
 
+%{
 block = eye(Col - sigma2);
-
 block = [block, zeros(Col - sigma2, sigma2)];
 block = [[ones(sigma2, 1), zeros(sigma2, Col - 1)]; block];
 block = sparse(block);
+%}
+
+block = spdiags(ones(Col, 1), -sigma2, Col, Col);
+block(1 : sigma2, 1) = 1;
 
 %disp(nnz(block)/numel(block));
 
@@ -330,7 +345,7 @@ for k = 1: r - a;
     result = [result; temp];
 end
 
-
+%{
 function saveImage(C)
 
 global inputFolder imageFile Row rawImage
@@ -339,7 +354,9 @@ I = vec2mat(C, Row);
 I = mat2gray(I);
 I = cat(2, I, mat2gray(rawImage));
 imwrite(I, fullfile(inputFolder, '..', 'Processed', strcat('processed', imageFile)));
+%}
 
+%{
 function showImages(C, r, imTitle, size)
 
 global Col;
@@ -350,7 +367,9 @@ I = vec2mat(C, Col);
 I = mat2gray(I);
 imshow(I);
 title(imTitle);
+%}
 
+%{
 function showFinalImage(C)
 
 global Col;
@@ -360,10 +379,13 @@ figure
 I = vec2mat(C, Col);
 I = mat2gray(I);
 imshow(I);
+%}
 
+%{
 function plotPerformance(t, normC, normVplus, normVminus, normX)
 
 %subplot(size, size, index);
 figure
 plot(t, normC, 'b', t, normVplus, 'g', t, normVminus, 'r', t, normX, 'y');
 legend('ComplexCells', 'LGN On', 'LGN Off', 'Layer 6');
+%}
