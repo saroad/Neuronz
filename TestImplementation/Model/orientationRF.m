@@ -104,7 +104,7 @@ result = result(:);
 
 function run()
 
-global rawImage Row Col rightVertical leftVertical kernelG2 sigma2 gamma w;
+global rawImage Row Col rightVertical leftVertical upHorizontal downHorizontal kernelG2 sigma2 gamma w;
 
 len = Row * Col;
 
@@ -119,8 +119,11 @@ x = zeros(len, 1);
 
 t5 = tic;
 kernelG2 = gaussian(sigma2);
+upHorizontal = incidenceHorizontalUp();
+downHorizontal = incidenceHorizontalDown();
 rightVertical = incidenceVerticalRight();
 leftVertical = incidenceVerticalLeft();
+
 %disp(issparse(rightVertical));
 %disp(nnz(kernelG2)/numel(kernelG2));
 %disp(nnz(rightVertical)/numel(rightVertical));
@@ -128,7 +131,7 @@ leftVertical = incidenceVerticalLeft();
 %disp('Runtime for G2:');
 %disp(toc(t5));
 
-iterations = 100;
+iterations = 200;
 gridSize = floor(sqrt(iterations)) + 1;
 t = 1 : iterations;
 normC = [];
@@ -144,8 +147,14 @@ for r = 1 : iterations
     [vplus, vminus] = LGN(vplus, vminus, uplus_rectified, uminus_rectified, x); % Equations (6), (7), (8), (9)
     vplus_rectified = max(vplus, 0);
     vminus_rectified = max(vminus, 0);
-    [Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
-    [Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
+  
+    %vertical Orientation
+    %[Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    %[Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    
+    %horizontal Orientation - Yasara
+    [Rplus, Lminus] = downHorizontalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rminus, Lplus] = upHorizontalSimpleCells(vplus_rectified, vminus_rectified);
     
     SR = Rplus + Lminus;  % Equation (12)
     SL = Rminus + Lplus; % Equation (13)
@@ -175,9 +184,6 @@ showFinalImage(C);
 plotPerformance(t, normC, normVplus, normVminus, normX);
 %saveImage(C);
 drawnow;
-
-
-
 
 % Equation (5)
 function result = gaussian(sigma)
@@ -247,7 +253,6 @@ result2 = Lminus;
 
 % Equations (10), (11)
 function [result1, result2] = leftVerticalSimpleCells(vplus, vminus)
-
 global rightVertical leftVertical ;
 
 Rminus = rightVertical * vminus; % Equation (10)
@@ -257,9 +262,31 @@ result1 = Rminus;
 result2 = Lplus;
 
 %result = Rminus + Lplus; % Equation (13)
+%upHorizontalSimpleCells - Yasara
+function [result1, result2] = upHorizontalSimpleCells(vplus, vminus)
 
+global upHorizontal downHorizontal ;
 
+Rplus = downHorizontal * vplus; % Equation (10)
+Lminus = upHorizontal * vminus; % Equation (11)
 
+result1 = Rplus;
+result2 = Lminus;
+
+%result = Rplus + Lminus; % Equation (12)
+
+% Equations (10), (11)
+%downHorizontalSimpleCells - Yasara
+function [result1, result2] = downHorizontalSimpleCells(vplus, vminus)
+
+global upHorizontal downHorizontal ;
+Rminus = upHorizontal * vminus; % Equation (10)
+Lplus = downHorizontal * vplus; % Equation (11)
+
+result1 = Rminus;
+result2 = Lplus;
+
+%result = Rminus + Lplus; % Equation (13)
 
 function result = incidenceVerticalRight()
 
@@ -284,6 +311,7 @@ block(Col - sigma2 + 1 : end, end) = 1;
 
 result = kron(speye(Row),block) * kernelG2;
 
+
 function result = incidenceVerticalLeft()
 
 global Row Col sigma2 kernelG2;
@@ -303,6 +331,25 @@ block(1 : sigma2, 1) = 1;
 %disp(block);
 
 result = kron(speye(Row),block) * kernelG2;
+
+%incidenceHorizontalUp - Yasara
+function result = incidenceHorizontalUp()
+
+global Row Col sigma2 kernelG2;
+
+block = spdiags(ones(Row, 1), sigma2, Row, Row);
+block(1 : sigma2, 1) = 1;
+result = kron(speye(Col),block) * kernelG2;
+
+%incidenceHorizontalDown - Yasara
+function result = incidenceHorizontalDown()
+
+global Row Col sigma2 kernelG2;
+
+block = spdiags(ones(Row, 1), -sigma2, Row, Row);
+block(Row - sigma2 + 1 : end, end) = 1;
+
+result = kron(speye(Col),block) * kernelG2;
 
 function result = prepareKernel(a, b, r, c, M)
 
