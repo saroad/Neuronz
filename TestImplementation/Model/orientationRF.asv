@@ -149,9 +149,9 @@ for r = 1 : iterations
     vminus_rectified = max(vminus, 0);
   
     %vertical Orientation
-%   [Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
-%   [Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
-   
+    %[Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    %[Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    
     %horizontal Orientation - Yasara
     [Rplus, Lminus] = downHorizontalSimpleCells(vplus_rectified, vminus_rectified);
     [Rminus, Lplus] = upHorizontalSimpleCells(vplus_rectified, vminus_rectified);
@@ -337,11 +337,9 @@ function result = incidenceHorizontalUp()
 
 global Row Col sigma2 kernelG2;
 
-new_block = eye(Col);
 block = spdiags(ones(Row, 1), sigma2, Row, Row);
-block(Row - sigma2 + 1 : end, end) = 1;
-
-result = kron(block,new_block)* kernelG2;
+block(1 : sigma2, 1) = 1;
+result = kron(speye(Col),block) * kernelG2;
 
 %incidenceHorizontalDown - Yasara
 function result = incidenceHorizontalDown()
