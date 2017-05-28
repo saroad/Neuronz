@@ -18,7 +18,7 @@ end
 %}
 
 
-name = fileList{43}; % 9, 14, 17, 23, 24, 25, 26, 30, 35*, 43**, 48
+name = fileList{1}; % 9, 14, 17, 23, 24, 25, 26, 30, 35*, 43**, 48
 
 imageFile = name;
 
@@ -170,6 +170,8 @@ disp(toc(t6));
 
 %showImages(rawImage, iterations + 1, 'Original Image', gridSize);
 
+%showFinalImage(Splus);
+%showFinalImage(Sminus);
 showFinalImage(C);
 
 plotPerformance(t, normC, normVplus, normVminus, normX);
@@ -265,13 +267,18 @@ function result = incidenceVerticalRight()
 
 global Row Col sigma2 kernelG2;
 
+%{
 block = eye(Col - sigma2);
 
 block = [zeros(Col - sigma2, sigma2), block];
 block = [block; [zeros(sigma2, Col - 1), ones(sigma2, 1)]];
 block = sparse(block);
+%}
 
-block = spdiags(ones(Col, 1), 
+
+block = spdiags(ones(Col, 1), sigma2, Col, Col);
+block(Col - sigma2 + 1 : end, end) = 1;
+
 
 %disp(nnz(block)/numel(block));
 
@@ -283,11 +290,15 @@ function result = incidenceVerticalLeft()
 
 global Row Col sigma2 kernelG2;
 
+%{
 block = eye(Col - sigma2);
-
 block = [block, zeros(Col - sigma2, sigma2)];
 block = [[ones(sigma2, 1), zeros(sigma2, Col - 1)]; block];
 block = sparse(block);
+%}
+
+block = spdiags(ones(Col, 1), -sigma2, Col, Col);
+block(1 : sigma2, 1) = 1;
 
 %disp(nnz(block)/numel(block));
 

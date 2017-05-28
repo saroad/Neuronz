@@ -170,6 +170,8 @@ disp(toc(t6));
 
 %showImages(rawImage, iterations + 1, 'Original Image', gridSize);
 
+%showFinalImage(Splus);
+%showFinalImage(Sminus);
 showFinalImage(C);
 
 plotPerformance(t, normC, normVplus, normVminus, normX);
