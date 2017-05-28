@@ -131,7 +131,7 @@ leftVertical = incidenceVerticalLeft();
 %disp('Runtime for G2:');
 %disp(toc(t5));
 
-iterations = 200;
+iterations = 100;
 gridSize = floor(sqrt(iterations)) + 1;
 t = 1 : iterations;
 normC = [];
@@ -149,12 +149,12 @@ for r = 1 : iterations
     vminus_rectified = max(vminus, 0);
   
     %vertical Orientation
-%   [Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
-%   [Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
    
     %horizontal Orientation - Yasara
-    [Rplus, Lminus] = downHorizontalSimpleCells(vplus_rectified, vminus_rectified);
-    [Rminus, Lplus] = upHorizontalSimpleCells(vplus_rectified, vminus_rectified);
+    %[Rplus, Lminus] = downHorizontalSimpleCells(vplus_rectified, vminus_rectified);
+    %[Rminus, Lplus] = upHorizontalSimpleCells(vplus_rectified, vminus_rectified);
     
     SR = Rplus + Lminus;  % Equation (12)
     SL = Rminus + Lplus; % Equation (13)
@@ -163,7 +163,7 @@ for r = 1 : iterations
     temp1 = SR - SL;
     temp2 = Splus - Sminus;
     
-    C = gamma * max(temp1, 0) + gamma * max(-temp1, 0) - w * max(temp2, 0) - w * max(temp2, 0); % Equatuion (17)
+    C = gamma * max(temp1, 0) + gamma * max(-temp1, 0) - w * max(temp2, 0) - w * max(-temp2, 0); % Equatuion (17)
     
     normC = [normC, norm(C,'fro')];
     normVplus = [normVplus, norm(vplus_rectified, 'fro')];
@@ -269,8 +269,8 @@ function [result1, result2] = upHorizontalSimpleCells(vplus, vminus)
 
 global upHorizontal downHorizontal ;
 
-Rplus = downHorizontal * vplus; % Equation (10)
-Lminus = upHorizontal * vminus; % Equation (11)
+Rplus = upHorizontal * vplus; % Equation (10)
+Lminus = downHorizontal * vminus; % Equation (11)
 
 result1 = Rplus;
 result2 = Lminus;
@@ -282,6 +282,7 @@ result2 = Lminus;
 function [result1, result2] = downHorizontalSimpleCells(vplus, vminus)
 
 global upHorizontal downHorizontal ;
+
 Rminus = upHorizontal * vminus; % Equation (10)
 Lplus = downHorizontal * vplus; % Equation (11)
 
@@ -343,7 +344,7 @@ new_block = speye(Col);
 block = spdiags(ones(Row, 1), sigma2, Row, Row);
 block(Row - sigma2 + 1 : end, end) = 1;
 
-result = kron(block,new_block)* kernelG2;
+result = kron(block,new_block) * kernelG2;
 
 %incidenceHorizontalDown - Yasara
 function result = incidenceHorizontalUp()
