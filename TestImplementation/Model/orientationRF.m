@@ -333,22 +333,22 @@ block(1 : sigma2, 1) = 1;
 result = kron(speye(Row),block) * kernelG2;
 
 %incidenceHorizontalUp - Yasara
-function result = incidenceHorizontalUp()
+function result = incidenceHorizontalDown()
 
 global Row Col sigma2 kernelG2;
 
-new_block = eye(Col);
+new_block = speye(Col);
 block = spdiags(ones(Row, 1), sigma2, Row, Row);
 block(Row - sigma2 + 1 : end, end) = 1;
 
 result = kron(block,new_block)* kernelG2;
 
 %incidenceHorizontalDown - Yasara
-function result = incidenceHorizontalDown()
+function result = incidenceHorizontalUp()
 
 global Row Col sigma2 kernelG2;
 
-new_block = eye(Col);
+new_block = speye(Col);
 block = spdiags(ones(Row, 1), -sigma2, Row, Row);
 block(1 : sigma2, 1) = 1;
 
