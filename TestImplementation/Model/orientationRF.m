@@ -114,8 +114,12 @@ uplus_rectified = max(uplus, 0);
 uminus_rectified = max(uminus, 0);
 vplus = zeros(len, 1);
 vminus = zeros(len, 1);
-C = zeros(len, 1);
-x = zeros(len, 1);
+C = zeros(len, 2); % Column 1 vertical, column 2 horizontal
+x = zeros(len, 2); % Column 1 vertical, column 2 horizontal
+Rplus = [[], []];
+Lplus = [[], []];
+Rminus = [[], []];
+Lminus = [[], []];
 
 t5 = tic;
 kernelG2 = gaussian(sigma2);
@@ -143,18 +147,18 @@ t6 = tic;
 
 for r = 1 : iterations
     x = layer6(x, C);  % Equation (22)
-    
+        
     [vplus, vminus] = LGN(vplus, vminus, uplus_rectified, uminus_rectified, x); % Equations (6), (7), (8), (9)
     vplus_rectified = max(vplus, 0);
     vminus_rectified = max(vminus, 0);
   
     %vertical Orientation
-    [Rplus, Lminus] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
-    [Rminus, Lplus] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rplus(:, 1), Lminus(:, 1)] = rightVerticalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rminus(:, 1), Lplus(:, 1)] = leftVerticalSimpleCells(vplus_rectified, vminus_rectified);
    
     %horizontal Orientation - Yasara
-    %[Rplus, Lminus] = downHorizontalSimpleCells(vplus_rectified, vminus_rectified);
-    %[Rminus, Lplus] = upHorizontalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rplus(:, 2), Lminus(:, 2)] = downHorizontalSimpleCells(vplus_rectified, vminus_rectified);
+    [Rminus(:, 2), Lplus(:, 2)] = upHorizontalSimpleCells(vplus_rectified, vminus_rectified);
     
     SR = Rplus + Lminus;  % Equation (12)
     SL = Rminus + Lplus; % Equation (13)
@@ -179,9 +183,11 @@ disp(toc(t6));
 
 %showImages(rawImage, iterations + 1, 'Original Image', gridSize);
 
-%showFinalImage(Splus);
-%showFinalImage(Sminus);
-showFinalImage(C);
+%showFinalImage(uplus_rectified);
+%showFinalImage(uminus_rectified);
+showFinalImage(C(:, 1));
+showFinalImage(C(:, 2));
+showFinalImage(sum(C, 2));
 
 plotPerformance(t, normC, normVplus, normVminus, normX);
 %saveImage(C);
@@ -235,8 +241,10 @@ function [result1, result2] = LGN(vplus, vminus, uplus_rectified, uminus_rectifi
 
 global dc C1 C2 kernelG1;
 
-A = C1 * x; % Equation (8)
-B = C2 * kernelG1 * x; % Equation (9)
+temp = sum(x, 2);
+
+A = C1 * temp; % Equation (8)
+B = C2 * kernelG1 * temp; % Equation (9)
 result1 = vplus + dc * (-vplus + (1 - vplus) .* uplus_rectified .* (1 + A) - (vplus + 1) .* B); % Equation (6)
 result2 = vminus + dc * (-vminus + (1 - vminus) .* uminus_rectified .* (1 + A) - (vminus + 1) .* B); % Equation (7)
 
