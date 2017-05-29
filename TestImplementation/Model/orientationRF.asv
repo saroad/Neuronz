@@ -42,10 +42,13 @@ disp('Done');
 
 function setParameters()
 
-global kernelG1 kernelG2 sigma1 sigma2 dc alpha C1 C2 gamma w;
+global kernelG1 kernelG2 sigma1 sigma2 dc alpha C1 C2 gamma w Wrange incidenceW kernelWplus kernelWminus dw C3 eta;
 
 kernelG1 = [];
 kernelG2 = [];
+incidenceW = [];
+kernelWplus = cell(4);
+kernelWminus = cell(4);
 
 sigma1 = 1; % Equation (3), (4), (9)   default 1
 sigma2 = 1; % Equation (10), (11)  default 0.5
@@ -55,6 +58,10 @@ C1 = 1.0; % Equation (8)   default 1.5
 C2 = 0.5; % Equation (9) default 0.075
 gamma = 1.0; % Equation (14), (15), (17)  default 10.0 
 w = 0.6; % Equation (17) default 6.0 
+Wrange = 7;
+dw = 0.001;
+C3 = 0.6; % default 6.0
+eta = 2.0;
 
 
 %{
@@ -116,6 +123,8 @@ vplus = zeros(len, 1);
 vminus = zeros(len, 1);
 C = zeros(len, 2); % Column 1 vertical, column 2 horizontal
 x = zeros(len, 2); % Column 1 vertical, column 2 horizontal
+y = zeros(len, 2); % Column 1 vertical, column 2 horizontal
+m = zeros(len, 2); % Column 1 vertical, column 2 horizontal
 Rplus = [[], []];
 Lplus = [[], []];
 Rminus = [[], []];
@@ -123,6 +132,7 @@ Lminus = [[], []];
 
 t5 = tic;
 kernelG2 = gaussian(sigma2);
+W();
 upHorizontal = incidenceHorizontalUp();
 downHorizontal = incidenceHorizontalDown();
 rightVertical = incidenceVerticalRight();
@@ -169,6 +179,12 @@ for r = 1 : iterations
     
     C = gamma * max(temp1, 0) + gamma * max(-temp1, 0) - w * max(temp2, 0) - w * max(-temp2, 0); % Equatuion (17)
     
+    m = layer4Inhibitory(m, x);
+    
+    y = layer4(y, C, m, x);
+    
+    trainW(m, y);
+    
     normC = [normC, norm(C,'fro')];
     normVplus = [normVplus, norm(vplus_rectified, 'fro')];
     normVminus = [normVminus, norm(vminus_rectified, 'fro')];
@@ -183,9 +199,18 @@ disp(toc(t6));
 
 %showImages(rawImage, iterations + 1, 'Original Image', gridSize);
 
-%showFinalImage(Splus);
-%showFinalImage(Sminus);
-showFinalImage(C);
+%showFinalImage(uplus_rectified);
+%showFinalImage(uminus_rectified);
+showFinalImage(y(:, 1));
+showFinalImage(y(:, 2));
+showFinalImage(sum(y, 2));
+
+global kernelWplus;
+
+temp = kernelWplus{2};
+
+showFinalImage(full(temp(40000, :)'));
+showFinalImage(full(temp(50000, :)'));
 
 plotPerformance(t, normC, normVplus, normVminus, normX);
 %saveImage(C);
@@ -215,6 +240,36 @@ result = prepareKernel(a, b, Row, Col, M);
 
 save(fileName, 'result');
 
+
+function W()
+
+global Row Col Wrange incidenceW kernelWplus kernelWminus;
+
+fileName = fullfile(fileparts(which(mfilename)), 'Wkernels', strcat(num2str(Row), '_', num2str(Col), '_', num2str(Wrange), '.mat'));
+
+if exist(fileName, 'file') == 2
+    load(fileName, 'incidenceW', 'kernelWplus', 'kernelWminus');
+    return;
+end
+
+a = floor(Row / 2);
+b = floor(Col / 2);
+len = Row * Col;
+
+I = [1 : Row]' * ones(1, Col);
+J = ones(Row, 1) * [1 : Col];
+M = sqrt((I - a) .^2 + (J - b) .^2);
+M = double(M < Wrange / 2);
+incidenceW = prepareKernel(a, b, Row, Col, M)';
+
+for i = 1 : 4
+    kernelWplus{i} = sparse(len, len);
+    kernelWminus{i} = sparse(len, len);
+end
+
+save(fileName, 'incidenceW', 'kernelWplus', 'kernelWminus');
+
+
 % Equation (3)
 function result = retinaOnCentre()
 
@@ -239,8 +294,10 @@ function [result1, result2] = LGN(vplus, vminus, uplus_rectified, uminus_rectifi
 
 global dc C1 C2 kernelG1;
 
-A = C1 * x; % Equation (8)
-B = C2 * kernelG1 * x; % Equation (9)
+temp = sum(x, 2);
+
+A = C1 * temp; % Equation (8)
+B = C2 * kernelG1 * temp; % Equation (9)
 result1 = vplus + dc * (-vplus + (1 - vplus) .* uplus_rectified .* (1 + A) - (vplus + 1) .* B); % Equation (6)
 result2 = vminus + dc * (-vminus + (1 - vminus) .* uminus_rectified .* (1 + A) - (vminus + 1) .* B); % Equation (7)
 
@@ -255,7 +312,6 @@ Lminus = leftVertical * vminus; % Equation (11)
 result1 = Rplus;
 result2 = Lminus;
 
-%result = Rplus + Lminus; % Equation (12)
 
 % Equations (10), (11)
 function [result1, result2] = leftVerticalSimpleCells(vplus, vminus)
@@ -267,7 +323,8 @@ Lplus = leftVertical * vplus; % Equation (11)
 result1 = Rminus;
 result2 = Lplus;
 
-%result = Rminus + Lplus; % Equation (13)
+
+% Equations (10), (11)
 %upHorizontalSimpleCells - Yasara
 function [result1, result2] = upHorizontalSimpleCells(vplus, vminus)
 
@@ -279,7 +336,6 @@ Lminus = downHorizontal * vminus; % Equation (11)
 result1 = Rplus;
 result2 = Lminus;
 
-%result = Rplus + Lminus; % Equation (12)
 
 % Equations (10), (11)
 %downHorizontalSimpleCells - Yasara
@@ -293,7 +349,57 @@ Lplus = downHorizontal * vplus; % Equation (11)
 result1 = Rminus;
 result2 = Lplus;
 
-%result = Rminus + Lplus; % Equation (13)
+
+function trainW(m, y)
+
+global Row Col incidenceW kernelWplus kernelWminus dw C3;
+
+len = Row * Col;
+
+index = [1, 1; 1, 2; 2, 1; 2, 2]; % vertical - 1, horizontal - 2
+
+M = cell(2);
+
+M{1} = spdiags(m(:, 1), 0, len, len);
+M{2} = spdiags(m(:, 2), 0, len, len);
+
+Y = cell(2);
+
+Y{1} = spdiags(y(:, 1), 0, len, len);
+Y{2} = spdiags(y(:, 2), 0, len, len);
+%{
+disp(size(M{1}));
+disp(size(Y{1}));
+disp(size(kernelWplus{1}));
+disp(size(incidenceW));
+%}
+
+for t = 1 : 4  % 1 - v & v, 2 - v & h, 3 - h & v, 4 - h & h 
+    
+    kernelWminus{t} = kernelWminus{t} + dw * (M{index(t, 1)} * incidenceW * M{index(t, 2)} - M{index(t, 1)} * kernelWminus{t}); % Equation (37)
+    kernelWplus{t} = kernelWplus{t} + dw * (C3 * M{index(t, 1)} * incidenceW * Y{index(t, 2)} - M{index(t, 1)} * kernelWplus{t}); % Equation (38)
+    
+end
+
+
+function result = layer4Inhibitory(m, x)
+
+global dc eta kernelWminus;
+
+temp = [((kernelWminus{1}) * m(:, 1) + (kernelWminus{3}) * m(:, 2)), ((kernelWminus{2}) * m(:, 1) + (kernelWminus{4}) * m(:, 2))];
+
+result = m + dc * ( - m + (eta * x) .^2 - m .* temp);
+
+
+function result = layer4(y, C, m, x)
+
+global dc eta kernelWplus;
+
+temp = [((kernelWplus{1}) * m(:, 1) + (kernelWplus{3} * m(:, 2)), (kernelWplus{2} * m(:, 1) + kernelWplus{4}' * m(:, 2))];
+
+result = y + dc * (-y + (1 - y) .* (C + eta * x) - (1 + y) .* temp);
+
+
 
 function result = incidenceVerticalRight()
 
