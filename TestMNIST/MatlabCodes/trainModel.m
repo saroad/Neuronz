@@ -27,6 +27,8 @@ tempW = weights;
 trainingSize = floor(double(dataSize) * trainingRatio);
 unclassified = 0;
 
+updateTime = 0.0;
+
 %{
 im = vec2mat(images(:, randi(10000)), 28)';
 imshow(im);
@@ -53,7 +55,11 @@ for r = 1 : iterations
         end
     end
     
+    time = tic;
+    
     STDP_update(results);
+    
+    updateTime = updateTime + toc(time);
     
     norms = [norms; zeros(1, numLayers - 1)];
     
@@ -69,6 +75,8 @@ end
 plotPerformance([1 : iterations]', norms, testLabels, clusters);
 
 disp(['Unclassified: ', int2str(unclassified), ' out of ', int2str(dataSize - trainingSize)]);
+
+disp(['Average STDP update time = ', num2str(updateTime / iterations)]);
 
 %disp(clusters);
 
@@ -104,18 +112,24 @@ for i = 1 : numLayers
 end
 %}
 
-temp1 = results{1}'; % temp1 - tranpose of input layer, temp2 - transpose of output layer, to avoid redundant computing
+%temp1 = results{1}'; % temp1 - tranpose of input layer, temp2 - transpose of output layer, to avoid redundant computing
 
-for r = 1 : numLayers - 1
+tempW = weights;
+
+parfor r = 1 : numLayers - 1
     
-    temp2 = results{r + 1}';
+    %temp2 = results{r + 1}';
     
-    [s, ~] = size(results{r + 1});
+    %[s, ~] = size(results{r + 1});
     
-    weights{r} = weights{r} + t * results{r + 1} * (temp1 -  temp2 * weights{r});
+    %weights{r} = weights{r} + t * results{r + 1} * (temp1 -  temp2 * weights{r});
+    
+    tempW{r} = weights{r} + t * results{r + 1} * (results{r}' - 2 * results{r + 1}' * weights{r});
     
     %weights{r} = weights{r} + t * (results{r + 1} * results{r}' -  spdiags(results{r + 1} .^2, 0, s, s) * weights{r});
    
-    temp1 = temp2;
+    %temp1 = temp2;
     
 end
+
+weights = tempW;
