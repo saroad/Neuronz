@@ -1,10 +1,10 @@
 function plotPerformance(x, norms, testLabels, clusters)
 
-%subplot(size, size, index);
 figure
 plot(x, norms);
-%legend('W_input_1', 'W_1_2', 'W_2_output');
 legend(strcat('Weights ', int2str(x)));
+xlabel('Iterations');
+ylabel('Average change in weights w(t + 1) - w(t)');
 
 if ~isempty(testLabels)
     
@@ -18,7 +18,7 @@ if ~isempty(testLabels)
         y(clusters(i), testLabels(i) + 1) = y(clusters(i), testLabels(i) + 1) + 1;
     end
     
-    y = bsxfun(@rdivide, 100 * y ,sum(y));
+    y = bsxfun(@rdivide, 100 * y ,sum(y, 2));
     
     figure
     h = bar(y);
