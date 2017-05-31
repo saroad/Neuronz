@@ -1,13 +1,16 @@
 folder = fileparts(which(mfilename));
-fileName = fullfile(folder, 'SampleImage.jpg');
+fileName = fullfile(folder, 'TestSample.jpg');
 image = imread(fileName);
 image = rgb2gray(image);
 %imshow(image);
 
 [rows,cols,numberOfColorBands] = size(image);
 
-blockSizeR = 50;
-blockSizeC = 50;
+disp(rows);
+disp(cols);
+
+blockSizeR = 10;
+blockSizeC = 10;
 
 wholeBlockRows = floor(rows / blockSizeR);
 blockVectorR = [blockSizeR * ones(1, wholeBlockRows), rem(rows, blockSizeR)];
@@ -24,12 +27,12 @@ numPlotsC = size(imageArray, 2);
 disp(numPlotsR);
 disp(numPlotsC);
 
-resultFolder = strcat(strcat(folder, '\'), 'ImageSamples1');
+resultFolder = strcat(strcat(folder, '\'), 'ImageSamples2');
 
 for r = 1 : numPlotsR - 1
 	for c = 1 : numPlotsC - 1
-        %imageName = strcat(int2str(plotIndex), '.jpg');
-        %imwrite(imageArray{r,c},fullfile(resultFolder, imageName));
+        imageName = strcat(int2str(plotIndex), '.jpg');
+        imwrite(imageArray{r,c},fullfile(resultFolder, imageName));
 		
         %{
 		subplot(numPlotsR - 1, numPlotsC - 1, plotIndex);
