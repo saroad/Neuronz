@@ -23,6 +23,6 @@ if ~isempty(testLabels)
     figure
     h = bar(y);
     xlabel('Cluster');
-    ylabel('Frequency percentage of each label in cluster (Precision for each cluster)');
+    ylabel('Frequency percentage of each label in cluster');
     legend(h, num2cell(regexprep(int2str([0 : 9]), '\s', '')));
 end
