@@ -1,28 +1,55 @@
-function plotPerformance(x, norms, testLabels, clusters)
+function plotPerformance(x, norms, testLabels, clusters, graphs)
 
-figure
-plot(x, norms);
-legend(strcat('Weights ', int2str(x)));
-xlabel('Iterations');
-ylabel('Average change in weights w(t + 1) - w(t)');
+if ismember(1, graphs)
+    figure
+    plot(x, norms);
+    legend(strcat('Weights ', int2str(x)));
+    xlabel('Iterations');
+    ylabel('Average change in weights w(t + 1) - w(t)');
+end
 
 if ~isempty(testLabels)
     
-    figure
-    silhouette(testLabels, clusters);
-    
-    y = ones(10, 10);
-    [r, ~] = size(clusters);
-    
-    for i = 1 : r
-        y(clusters(i), testLabels(i) + 1) = y(clusters(i), testLabels(i) + 1) + 1;
+    if ismember(2, graphs) 
+        figure
+        silhouette(testLabels, clusters);
     end
     
-    y = bsxfun(@rdivide, 100 * y ,sum(y, 2));
+    if ismember(3, graphs)
+        uniqueClust = unique(clusters);
+        uniqueLbl = unique(testLabels);
+        numClust = numel(uniqueClust);
+        numLabels = numel(uniqueLbl);
+
+        clusInd = arrayfun(@(x) find(uniqueClust == x, 1), clusters);
+        lblInd = arrayfun(@(x) find(uniqueLbl == x, 1), testLabels);
+        
+        y = zeros(numClust, numLabels);
+        [r, ~] = size(clusters);
+        
+        
+        for i = 1 : r
+            y(clusInd(i), lblInd(i)) = y(clusInd(i), lblInd(i)) + 1;
+        end
     
-    figure
-    h = bar(y);
-    xlabel('Cluster');
-    ylabel('Frequency percentage of each label in cluster (Precision for each cluster)');
-    legend(h, num2cell(regexprep(int2str([0 : 9]), '\s', '')));
+        %y = bsxfun(@rdivide, 100 * y ,sum(y, 2));
+        
+        [yr, yc] = size(y);
+        
+        if yr == 1 && yc > 1
+            y = [y; zeros(1, yc)];
+        end
+        
+        if yc == 1 && yr > 1
+            y = [y, zeros(yr, 1)];
+        end
+        
+        figure
+        h = bar(y);
+        %set(gca,'xticklabel',num2cell(regexprep(int2str(uniqueClust'), '\s', '')));
+        set(gca,'xticklabel',strsplit(int2str(uniqueClust')));
+        xlabel('Cluster');
+        ylabel('Frequency of each label');
+        legend(h, num2cell(regexprep(int2str(uniqueLbl'), '\s', '')));
+    end
 end
