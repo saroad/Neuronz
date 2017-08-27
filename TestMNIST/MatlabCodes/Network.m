@@ -46,8 +46,8 @@ classdef Network < handle
                 for i = 1 : obj.numLayers - 1
 
                     %obj.feedforwardConnections{i} = rand(layerStruct(i + 1),layerStruct(i));
-                    %obj.feedforwardConnections{i} = normr(binornd(1, 0.2, obj.layerStruct(i + 1), obj.layerStruct(i)));
-                    obj.feedforwardConnections{i} = binornd(1, 0.2, obj.layerStruct(i + 1), obj.layerStruct(i));
+                    obj.feedforwardConnections{i} = normr(binornd(1, 0.2, obj.layerStruct(i + 1), obj.layerStruct(i)));
+                    %obj.feedforwardConnections{i} = binornd(1, 0.2, obj.layerStruct(i + 1), obj.layerStruct(i));
 
                 end
                 
@@ -191,7 +191,7 @@ classdef Network < handle
                 %layers{k + 1} = mat2gray(layers{k + 1});
                 layers{k + 1} = normc(layers{k + 1});
                 %layers{k + 1} = obj.scale(layers{k + 1});
-                %layers{k + 1} = sigmf(layers{k + 1});
+                layers{k + 1} = sigmf(layers{k + 1}, [3, 0.5]);
 
             end
             

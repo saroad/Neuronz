@@ -38,6 +38,9 @@ net = Network([784, layerset, 10]);
 numLayers = net.numLayers;
 tempW = net.feedforwardConnections;
 %tempW = net.lateralConnections;
+temp = net.feedforwardConnections;
+
+pow = 1;
 
 for r = 1 : iterations
     
@@ -73,6 +76,12 @@ for r = 1 : iterations
         
     end
     
+    %{
+    if r == pow
+        showFinalImage(abs(weights{1} - temp{1}));
+        pow = pow * 10;
+    end
+    %}
     
 end
 
@@ -98,11 +107,11 @@ for i = 1 : numLayers - 1
 end
 %}
 
-%showFinalImage([temp{1},max(max(weights{1}))* ones(layers(2), 5), weights{1}]);
+%showFinalImage([temp{1}, max(max(weights{1}))* ones(layers(2), 5), weights{1}]);
 
 %showFinalImage(weights{1});
 
-%showFinalImage(abs(weights{1} - temp{1}));
+showFinalImage(abs(weights{1} - temp{1}));
 
 %clust = kmeans(images(:, trainingSize + 1 : dataSize)', 8);
 
