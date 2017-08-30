@@ -4,7 +4,7 @@ global t weights numLayers;
 
 t = 0.001;
 trainingRatio = 0.7;
-p = 0.5;
+p = 0.3;
 
 initialise(layers);
 
@@ -22,13 +22,22 @@ testLabels = [];
 clusters = [];
 
 results = cell(numLayers);
+tempW = weights;
 
 trainingSize = floor(double(dataSize) * trainingRatio);
 unclassified = 0;
 
+updateTime = 0.0;
+
+%{
+im = vec2mat(images(:, randi(10000)), 28)';
+imshow(im);
+drawnow;
+%}
+
 for r = 1 : iterations
    
-    results{1} = mat2gray(images(:, r));
+    results{1} = normc(mat2gray(images(:, r)));
     
     for k = 1 : numLayers - 1
         
@@ -46,13 +55,18 @@ for r = 1 : iterations
         end
     end
     
+    time = tic;
+    
     STDP_update(results);
+    
+    updateTime = updateTime + toc(time);
     
     norms = [norms; zeros(1, numLayers - 1)];
     
     for k = 1 : numLayers - 1
         
-        norms(end, k) = norm(weights{k},'fro');
+        norms(end, k) = norm(weights{k} - tempW{k},'fro') / numel(weights{k});
+        tempW{k} = weights{k};
         
     end
     
@@ -61,6 +75,8 @@ end
 plotPerformance([1 : iterations]', norms, testLabels, clusters);
 
 disp(['Unclassified: ', int2str(unclassified), ' out of ', int2str(dataSize - trainingSize)]);
+
+disp(['Average STDP update time = ', num2str(updateTime / iterations)]);
 
 %disp(clusters);
 
@@ -76,7 +92,8 @@ weights = cell(numLayers - 1);
 
 for i = 1 : numLayers - 1
     
-    weights{i} = rand(layers(i + 1),layers(i));
+    %weights{i} = rand(layers(i + 1),layers(i));
+    weights{i} = normr(binornd(15, 0.5, layers(i + 1),layers(i)));
     
 end
 
@@ -85,14 +102,34 @@ function STDP_update(results)
 
 global t weights numLayers;
 
-temp1 = results{1}'; % temp1 - tranpose of input layer, temp2 - transpose of output layer, to avoid redundant computing
+%{
+tResults = cell(numLayers);
 
-for r = 1 : numLayers - 1
+for i = 1 : numLayers
     
-    temp2 = results{r + 1}';
-    
-   weights{r} = weights{r} + t * results{r + 1} * (temp1 -  temp2 * weights{r});
-   
-   temp1 = temp2;
+    tResults{i} = results{i}';
     
 end
+%}
+
+%temp1 = results{1}'; % temp1 - tranpose of input layer, temp2 - transpose of output layer, to avoid redundant computing
+
+tempW = weights;
+
+parfor r = 1 : numLayers - 1
+    
+    %temp2 = results{r + 1}';
+    
+    %[s, ~] = size(results{r + 1});
+    
+    %weights{r} = weights{r} + t * results{r + 1} * (temp1 -  temp2 * weights{r});
+    
+    tempW{r} = weights{r} + t * results{r + 1} * (results{r}' - 2 * results{r + 1}' * weights{r});
+    
+    %weights{r} = weights{r} + t * (results{r + 1} * results{r}' -  spdiags(results{r + 1} .^2, 0, s, s) * weights{r});
+   
+    %temp1 = temp2;
+    
+end
+
+weights = tempW;
