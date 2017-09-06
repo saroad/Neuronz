@@ -2,7 +2,7 @@ function orientationRF()
 
 t1 = tic;
 
-global imageFile kernelG1 Row Col;
+global imageFile image Row Col kernelH kernelV;
 
 setParameters();
 
@@ -19,25 +19,68 @@ end
 %}
 
 
-name = fileList{2}; % 9, 14, 17, 23, 24, 25, 26, 30, 35*, 43**, 48
+%name = fileList{3}; % 9, 14, 17, 23, 24, 25, 26, 30, 35*, 43**, 48
 
-imageFile = name;
+%imageFile = name;
 
-t2 = tic;
-init();
-%disp(toc(t2));
+tests = 1000;
 
-t3 = tic;
-run();
-%disp(toc(t3));
+%init();
+Row = 50;
+Col = 50;
+
+norm1 = [];
+norm2 = [];
+norm3 = [];
+norm4 = [];
+
+initStructs();
+
+for i = 1 : tests
+
+    imageFile = fileList{randi(length(fileList))};
+    [image, ~, ~] = readImage();
+    run(0);
+
+    temp = kernelH;
+    
+    norm1 = [norm1, norm(temp{1}, 'fro')];
+    norm2 = [norm2, norm(temp{2},'fro')];
+    norm3 = [norm3, norm(temp{3}, 'fro')];
+    norm4 = [norm4, norm(temp{4}, 'fro')];
+     
+    disp(i);
+    
+end
 
 disp('Overall runtime:');
 disp(toc(t1));
 
-disp(name);
+len = Row * Col;
 
-%I = mat2gray(full(vec2mat(kernelG1(floor(Row * Col / 2 - Col / 2), :)', Col)));
-%imshow(I);
+temp1 = kernelV{2};
+[~, ind] = max(temp1(:));
+[r, c] = ind2sub([len, len], ind);
+showFinalImage(full(temp1(r, :)'));
+
+temp2 = kernelH;
+
+disp(sum(sum(temp2{1} ~= 0)) / numel(temp2{1}));
+disp(sum(sum(temp2{2} ~= 0)) / numel(temp2{2}));
+disp(sum(sum(temp2{3} ~= 0)) / numel(temp2{3}));
+disp(sum(sum(temp2{4} ~= 0)) / numel(temp2{4}));
+
+t = 1 : tests;
+
+plotPerformance(t, norm1, norm2, norm3, norm4);
+
+for i = 1 : 5
+
+    imageFile = fileList{randi(length(fileList))};
+    [image, ~, ~] = readImage();
+    run(1);
+    
+end
 
 disp('Done');
 
@@ -60,37 +103,37 @@ kernelTminus = cell(4);
 
 sigma1 = 1.0; % Equation (3), (4), (9)   default 1 (must be integers)
 sigma2 = 1.0; % Equation (10), (11)  default 0.5 (must be integers)
-dc = 0.25; % Equation  (6), (7), (20), (26), (28) default 0.25   0.025 0.001
+dc = 0.001; % Equation  (6), (7), (20), (26), (28) default 0.25   0.025 0.001
 da = 0.25;  % Equation (29) default 0.25
 dv = 0.5;   % Equation (33) default 0.5
 epsilon = 0.01; % Equation (34) default 0.01
-shi = 2.0;  % Equation (22), (24) default 2.0 
-alpha = 0.5; % Equation  (22) default 0.5    0.005
+shi = 1.0;  % Equation (22), (24) default 2.0 
+alpha = 0.005; % Equation  (22) default 0.5    0.005
 beta = 8.0; % Equation (31) default 8.0
-C1 = 1.5; % Equation (8)   default 1.5   1.0
-C2 = 0.075; % Equation (9) default 0.075   0.5
-gamma = 10.0; % Equation (14), (15), (17)  default 10.0   1.0
-w = 6.0; % Equation (17) default 6.0   0.6
+C1 = 1.0; % Equation (8)   default 1.5   1.0
+C2 = 0.5; % Equation (9) default 0.075   0.5
+gamma = 1.0; % Equation (14), (15), (17)  default 10.0   1.0
+w = 0.6; % Equation (17) default 6.0   0.6
 Wrange = 7.0; % Equation (39) default 7.0
 Hrange = 11.0;    % Equation (32) default 11.0 
 Utotal = 44.0;  % Equation (29) default 44.0
-T = 0.1;    % Equation (23) default 0.1
+T = 0.05;    % Equation (23) default 0.1
 dw = 0.001; % Equation (35) - (38)
-C3 = 6.0; % Equation (38) default 6.0   0.6
+C3 = 0.6; % Equation (38) default 6.0   0.6
 eta = 2.0; % Equation (25) default 2.0
 phi = 0.01; % Equation (29) default 0.01
 k = 6.0;    % Equation (30) default 6.0
 tau = 1.5;  % Equation (35) default 1.5
-lambda = 1.25;  % Equation (26) default 1.25
+lambda = 1.25;  % Equation (26) default 1.25  0.5
 
 
-function run()
+function run(runtype)
 
-global rawImage Row Col;
+global Row Col;
 
 len = Row * Col;
 
-initStructs();
+%initStructs();
 
 uplus = retinaOnCentre(); % Equation (5)
 uplus_rectified = max(uplus, 0);
@@ -104,17 +147,7 @@ m = zeros(len, 2); % Column 1 vertical, column 2 horizontal
 z = zeros(len, 2); % Column 1 vertical, column 2 horizontal
 s = zeros(len, 2); % Column 1 vertical, column 2 horizontal
 
-
-t5 = tic;
-
-%disp(issparse(rightVertical));
-%disp(nnz(kernelG2)/numel(kernelG2));
-%disp(nnz(rightVertical)/numel(rightVertical));
-%disp(nnz(leftVertical)/numel(leftVertical));
-%disp('Runtime for G2:');
-%disp(toc(t5));
-
-iterations = 20;
+iterations = 5;
 gridSize = floor(sqrt(iterations)) + 1;
 t = 1 : iterations;
 normX = [];
@@ -122,11 +155,9 @@ normY = [];
 normZ = [];
 normS = [];
 
-t6 = tic;
-
 for r = 1 : iterations
     
-    disp(r);
+    %disp(r);
         
     [vplus, vminus] = LGN(vplus, vminus, uplus_rectified, uminus_rectified, x); % Equations (6), (7), (8), (9)
     
@@ -144,38 +175,48 @@ for r = 1 : iterations
     trainUV(z); % Equations (27), (29) - (34)
     trainT(z, s);   % Equations (35), (36)
     
+    %{
     normX = [normX, norm(x, 'fro')];
     normY = [normY, norm(y,'fro')];
     normZ = [normZ, norm(z, 'fro')];
     normS = [normS, norm(s, 'fro')];
     
     %showImages(C, r, strcat('Iteration: ', int2str(r)), gridSize);
+    %}
     
 end
 
-disp(strcat('Runtime for iterations = ', iterations));
-disp(toc(t6));
+if runtype
+    showFinalImage(sum(C, 2));
+    %showFinalImage(z(:, 1));
+    %showFinalImage(z(:, 2));
+    showFinalImage(sum(z, 2));
+end
 
-showFinalImage(sum(y, 2));
-showFinalImage(z(:, 1));
-showFinalImage(z(:, 2));
-showFinalImage(sum(z, 2));
-
+%{
 %showImages(rawImage, iterations + 1, 'Original Image', gridSize);
 
 
-global kernelV;
+global kernelTplus kernelTminus kernelH kernelU kernelV kernelWplus kernelWminus;
 
 temp = kernelV{1};
 
-showFinalImage(full(temp(40000, :)'));
-showFinalImage(full(temp(50000, :)'));
+[~, ind] = max(temp(:));
+[r, c] = ind2sub([len, len], ind);
+disp(r);
+disp(c);
 
+showFinalImage(full(temp(r, :)'));
 
-plotPerformance(t, normX, normY, normZ, normS);
+disp(sum(sum(kernelH{1} ~= 0)) / numel(kernelH{1}));
+disp(sum(sum(kernelH{2} ~= 0)) / numel(kernelH{2}));
+disp(sum(sum(kernelH{3} ~= 0)) / numel(kernelH{3}));
+disp(sum(sum(kernelH{4} ~= 0)) / numel(kernelH{4}));
+
+%plotPerformance(t, normX, normY, normZ, normS);
 %saveImage(C);
 drawnow;
-
+%}
 
 % Network simulation and neuronal output
 
@@ -214,14 +255,17 @@ temp = sum(x, 2);
 
 A = C1 * temp; % Equation (8)
 B = C2 * kernelG1 * temp; % Equation (9)
+
 %result1 = vplus + dc * (-vplus + (1 - vplus) .* uplus_rectified .* (1 + A) - (vplus + 1) .* B); % Equation (6)
 %result2 = vminus + dc * (-vminus + (1 - vminus) .* uminus_rectified .* (1 + A) - (vminus + 1) .* B); % Equation (7)
+
 
 temp1 = uplus_rectified .* (1 + A);
 temp2 = uminus_rectified .* (1 + A);
 
 result1 = (temp1 - B) ./ (1 + temp1 + B);
 result2 = (temp2 - B) ./ (1 + temp2 + B);
+
 
 % Equations (12) - (19)
 function result = poolLGN(vplus, vminus)
@@ -374,6 +418,14 @@ for i = 1 : 4
     f(f <= T) = 0;
     F = spdiags(f, 0, len, len);
     kernelU{i} = kernelU{i} + da * (Z{index(i, 1)} * A{i} * spdiags(temp1{i}', 0, len, len) - phi * temp2{i}) * F;
+    
+    %{
+    S = (F ~= 0);
+    S = sum(sum(S));
+    if S ~= 0
+        disp(strcat(num2str(i), '->',num2str(S)));
+    end
+    %}
     
     %B = double(spfun(@(x) (abs(x - 1)), A{i}) < epsilon);
     B = spfun(@(x) max(epsilon - abs(x - 1), 0), A{i});
