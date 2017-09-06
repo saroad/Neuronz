@@ -4,7 +4,7 @@ global inputFolder;
 
 [inputFolder, ~, ~] = fileparts(which(mfilename));
 
-inputFolder = fullfile(inputFolder, '..', 'InitialCodes\ImageSamples1');
+inputFolder = fullfile(inputFolder, '..', 'ImageSamples\Sampled');
 
 index = dir(inputFolder);
 fileList = {index.name};
