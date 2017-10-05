@@ -4,7 +4,7 @@ global outputFolder index rawImage;
 
 [inputFolder, ~, ~] = fileparts(which(mfilename));
 inputFolder = fullfile(inputFolder, 'ImageSamples');
-outputFolder = fullfile(inputFolder, 'Sampled');
+outputFolder = fullfile(inputFolder, 'Sampled100');
 
 
 index = dir(inputFolder);
@@ -30,7 +30,7 @@ function createSubImages()
 global outputFolder index rawImage;
 
 n = 20;
-L = 50;
+L = 100;
 
 if(size(rawImage, 3) == 3)
     rawImage = rgb2gray(rawImage);

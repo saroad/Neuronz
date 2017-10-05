@@ -6,11 +6,11 @@ p = 0.3;
 images = loadTrainImages();
 labels = loadTrainLabels();
 
-
+%{
 selected = find(labels == 0 | labels == 1);
 labels = labels(selected);
 images = images(:, selected');
-
+%}
 
 [~, c] = size(images);
 dataSize = min(c, dataSize);

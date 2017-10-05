@@ -2,7 +2,7 @@ function orientationRF()
 
 t1 = tic;
 
-global imageFile image Row Col kernelH kernelV;
+global imageFile image Row Col kernelH kernelV kernelU;
 
 setParameters();
 
@@ -23,7 +23,7 @@ end
 
 %imageFile = name;
 
-tests = 1000;
+tests = 500;
 
 %init();
 Row = 50;
@@ -58,7 +58,7 @@ disp(toc(t1));
 
 len = Row * Col;
 
-temp1 = kernelV{2};
+temp1 = kernelV{3};
 [~, ind] = max(temp1(:));
 [r, c] = ind2sub([len, len], ind);
 showFinalImage(full(temp1(r, :)'));
@@ -86,7 +86,7 @@ disp('Done');
 
 function setParameters()
 
-global kernelG1 kernelG2 sigma1 sigma2 dc da dv epsilon shi alpha beta C1 C2 gamma w Wrange Hrange Utotal T incidenceW incidenceU kernelWplus kernelWminus kernelU distanceU kernelV kernelH kernelTplus kernelTminus dw C3 eta phi k tau lambda;
+global kernelG1 kernelG2 sigma1 sigma2 dc da dv epsilon shi alpha beta C1 C2 gamma w Wrange Hrange Utotal T incidenceW incidenceU kernelWplus kernelWminus kernelU distanceU kernelV kernelH kernelTplus kernelTminus dw C3 eta phi k tau lambda a b;
 
 kernelG1 = [];
 kernelG2 = [];
@@ -117,7 +117,7 @@ w = 0.6; % Equation (17) default 6.0   0.6
 Wrange = 7.0; % Equation (39) default 7.0
 Hrange = 11.0;    % Equation (32) default 11.0 
 Utotal = 44.0;  % Equation (29) default 44.0
-T = 0.05;    % Equation (23) default 0.1
+T = 0.1;    % Equation (23) default 0.1
 dw = 0.001; % Equation (35) - (38)
 C3 = 0.6; % Equation (38) default 6.0   0.6
 eta = 2.0; % Equation (25) default 2.0
@@ -125,11 +125,13 @@ phi = 0.01; % Equation (29) default 0.01
 k = 6.0;    % Equation (30) default 6.0
 tau = 1.5;  % Equation (35) default 1.5
 lambda = 1.25;  % Equation (26) default 1.25  0.5
+a = 0.125;
+b = 1.0;
 
 
 function run(runtype)
 
-global Row Col;
+global Row Col image;
 
 len = Row * Col;
 
@@ -138,6 +140,8 @@ len = Row * Col;
 uplus = retinaOnCentre(); % Equation (5)
 uplus_rectified = max(uplus, 0);
 uminus_rectified = max(-uplus, 0);
+%uplus_rectified(uplus_rectified < 0.9) = 0;
+%uminus_rectified(uminus_rectified < 0.9) = 0;
 vplus = zeros(len, 1);
 vminus = zeros(len, 1);
 C = zeros(len, 2); % Column 1 vertical, column 2 horizontal
@@ -187,10 +191,12 @@ for r = 1 : iterations
 end
 
 if runtype
-    showFinalImage(sum(C, 2));
+    %showFinalImage(sum(C, 2));
     %showFinalImage(z(:, 1));
     %showFinalImage(z(:, 2));
-    showFinalImage(sum(z, 2));
+    %showFinalImage([image, sum(C, 2), sum(z, 2)]);
+    figure
+    imshow(vec2mat([mat2gray(image); mat2gray(sum(C, 2)); mat2gray(sum(z, 2))], Col));
 end
 
 %{
@@ -322,7 +328,7 @@ result = (C + eta * x - temp) ./ (1 + C + eta * x + temp);
 % Equation (26), (28)
 function [result1, result2] = layer2_3(z, s, y)
 
-global kernelH kernelTplus kernelTminus lambda T dc;
+global kernelH kernelTplus kernelTminus lambda T dc a b;
 
 F = z;
 F(F <= T) = 0;
@@ -335,7 +341,7 @@ temp3 = [(kernelTminus{1} .* s(:, 1) + kernelTminus{2} .* s(:, 2)), (kernelTminu
 %result2 = s + dc * ( - s + temp1 - s .* temp3);
 
 
-result1 = 1 - 1 ./ (1 + lambda * max(y, 0) + max(temp1 - temp2, 0));
+result1 = 1 - 1 ./ (1 + lambda * max(y, 0) + max(a * temp1 - b * temp2, 0));
 result2 = temp1 ./ (1 + temp3);
 
 
