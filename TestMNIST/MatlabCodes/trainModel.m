@@ -7,7 +7,7 @@ images = loadTrainImages();
 labels = loadTrainLabels();
 
 
-selected = find(labels == 0 | labels == 1);
+selected = find(labels == 0 | labels == 1 | labels == 2);
 labels = labels(selected);
 images = images(:, selected');
 
@@ -76,11 +76,13 @@ for it = 1 : iterations
     r = randi(dataSize, 1);
     results = net.getOutput(mat2gray(images(:, r)));
     
+    %{
     for l = 1 : numLayers
         
         distData{l}(end + 1 : end + size(results{l}, 1)) = results{l};
         
     end
+    %}
     
     %{
     S = [1; 1];
@@ -206,12 +208,14 @@ for i = 1 : numLayers - 1
 end
 %}
 
+%{
 for i = 1 : numLayers
     
     figure
     histfit(distData{i});
    
 end
+%}
 
 %showFinalImage([temp{1}, max(max(weights{1}))* ones(layers(2), 5), weights{1}]);
 

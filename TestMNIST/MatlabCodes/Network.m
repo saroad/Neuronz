@@ -174,6 +174,13 @@ classdef Network < handle
             
         end
         
+        function result = spike(obj, input)
+            
+            result = zscore(input);
+            result = sigmf(result, [1, 0]);
+            
+        end
+        
         
         function saveWeights(obj)
             
@@ -217,7 +224,8 @@ classdef Network < handle
                 %layers{k + 1} = obj.lateralConnections{k} * layers{k + 1};
                 
                 %layers{k + 1} = mat2gray(layers{k + 1});
-                layers{k + 1} = normc(layers{k + 1});
+                %layers{k + 1} = normc(layers{k + 1});
+                layers{k + 1} = obj.spike(layers{k + 1});
                 %layers{k + 1} = layers{k + 1} / norm(layers{k + 1}, 2.0);
                 %layers{k + 1} = obj.scale(layers{k + 1});
                 %layers{k + 1} = sigmf(layers{k + 1}, [3, 0.5]);
