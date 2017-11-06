@@ -78,7 +78,9 @@ for it = 1 : iterations
     
     for l = 1 : numLayers
         
-        distData{l}(end + 1 : end + size(results{l}, 1)) = results{l};
+        %distData{l} = [distData{l}; results{l}];
+        distData{l} = cat(1, distData{l}, results{l});
+        distData{l}(end + 1, end + )
         
     end
     

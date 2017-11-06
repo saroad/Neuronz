@@ -134,7 +134,6 @@ temp1 = fspecial('gaussian', filterSize, 5.0);
 verticalKernel = temp1(:, floor(filterSize / 2) + 1) * c;
 horizontalKernel = temp1(floor(filterSize / 2) + 1, :) * c;
 
-
 %Lateral connections - Inhibitory
 inhibitVertical = [-b, 0, -b]';
 inhibitHorizontal = [-b, 0, -b];

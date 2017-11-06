@@ -210,6 +210,8 @@ classdef Network < handle
             layers = cell([1, obj.numLayers]);
             layers{1} = normc(input);
             %layers{1} = obj.scale(input);
+            m = 0;
+            l = 1000;
             
             for k = 1 : obj.numLayers - 1
         

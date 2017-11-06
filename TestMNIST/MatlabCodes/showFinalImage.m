@@ -4,6 +4,7 @@ function showFinalImage(C)
 
 %I = vec2mat(max(C, max(C) / 10), Row);
 figure
-%I = vec2mat(C, Col);
-I = mat2gray(C);
+I = C;
+%I = vec2mat(C, 28);
+I = mat2gray(I');
 imshow(I);
