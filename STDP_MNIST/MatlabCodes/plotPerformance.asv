@@ -1,0 +1,46 @@
+function plotPerformance(x, norms, testLabels, clusters, graphs)
+
+if ismember(1, graphs)
+    figure
+    plot(x, norms);
+    legend(strcat('Weights ', int2str(x)));
+    xlabel('Iterations');
+    ylabel('Average change in weights w(t + 1) - w(t)');
+end
+
+if ~isempty(testLabels)
+    
+    if ismember(2, graphs) 
+        figure
+        silhouette(testLabels, clusters);
+    end
+    
+    if ismember(3, graphs)
+        uniqueClust = unique(clusters);
+        uniqueLbl = unique(testLabels);
+        numClust = numel(uniqueClust);
+        numLabels = numel(uniqueLbl);
+
+        clusters = arrayfun(@(x) find(uniqueClust == x, 1), clusters);
+        lblInd = arrayfun(@(x) find(uniqueLbl == x, 1), testLabels);
+        
+        y = zeros(numClust, numLabels);
+        [r, ~] = size(clusters);
+        
+        disp(r);
+        disp(numClust);
+        disp(numLabels);
+    
+        for i = 1 : r
+            y(clusters(i), lblInd(i)) = y(clusters(i), lblInd(i)) + 1;
+        end
+    
+        y = bsxfun(@rdivide, 100 * y ,sum(y, 2));
+    
+        figure
+        h = bar(y);
+        xlabel('Cluster');
+        ylabel('Frequency percentage of each label in cluster (Precision for each cluster)');
+        legend(h, num2cell(regexprep(int2str(uniqueLbl'), '\s', '')));
+    end
+end

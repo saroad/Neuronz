@@ -6,6 +6,7 @@ if ismember(1, graphs)
     legend(strcat('Weights ', int2str(x)));
     xlabel('Iterations');
     ylabel('Average change in weights w(t + 1) - w(t)');
+    %ylim([0, 0.00005]);
 end
 
 if ~isempty(testLabels)
